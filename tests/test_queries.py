@@ -2,7 +2,7 @@
 from typing import List
 
 import pytest
-from sqlalchemy import func, insert, select, table, text
+from sqlalchemy import func, insert, select, table, text, lambda_stmt
 from sqlalchemy.orm import Query
 from sqlalchemy.sql import Select
 
@@ -222,3 +222,10 @@ def test_query_with_same_field_as_softdelete_field_but_ignored(seeded_session, r
         )
         is False
     )
+
+def test_lambda_statement(seeded_session, rewriter):
+    stmt = lambda_stmt(lambda: select(SDSimpleTable))
+    stmt += lambda s: s.where(SDSimpleTable.int_field == 5)
+
+    soft_deleted_rewritten_statement = rewriter.rewrite_statement(stmt)
+    assert is_filtering_for_softdeleted(soft_deleted_rewritten_statement, {SDSimpleTable.__table__}) is True
